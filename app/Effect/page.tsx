@@ -1,20 +1,25 @@
 "use client";
 
 import WebGPUCanvas from "@/components/canvas";
-import { useAspect, useTexture } from "@react-three/drei";
+import { useTexture } from "@react-three/drei";
 import React, { Fragment, useMemo } from "react";
 import * as THREE from "three/webgpu";
-import TEXTUREMAP from "@/assets/raw-1.png";
-import DEPTHMAP from "@/assets/depth-1.png";
+import TEXTUREMAP from "@/assets/raw-2.png";
+import DEPTHMAP from "@/assets/depth-2.png";
 import { useGSAP } from "@gsap/react";
 import {
   abs,
   blendScreen,
   float,
+  Fn,
+  max,
   mod,
   mx_cell_noise_float,
   oneMinus,
+  select,
+  ShaderNodeObject,
   smoothstep,
+  sub,
   texture,
   uniform,
   uv,
@@ -23,6 +28,7 @@ import {
 } from "three/tsl";
 import gsap from "gsap";
 import { useFrame } from "@react-three/fiber";
+import PostProcessing from "@/components/post-processing";
 
 const WIDTH = 1600;
 const HEIGHT = 900;
@@ -33,6 +39,9 @@ const Scene = () => {
   });
 
   const { material, uniforms } = useMemo(() => {
+    // cross animation
+
+    // dot animation
     const uPointer = uniform(new THREE.Vector2(0));
     const uProgress = uniform(0);
 
@@ -45,7 +54,7 @@ const Scene = () => {
       uv().add(uDepthMap.r.mul(uPointer).mul(strength))
     );
 
-    const aspect = float(WIDTH, HEIGHT);
+    const aspect = float(1, 1.5);
     const tUv = vec2(uv().x.mul(aspect), uv().y);
 
     const tiling = vec2(120.0);
@@ -60,7 +69,7 @@ const Scene = () => {
 
     const flow = oneMinus(smoothstep(0, 0.02, abs(depth.sub(uProgress))));
 
-    const mask = dot.mul(flow).mul(vec3(10, 0, 0));
+    const mask = dot.mul(flow).mul(vec3(10, 0.25, 0.25));
 
     const final = blendScreen(uMap, mask);
 
@@ -77,14 +86,12 @@ const Scene = () => {
     };
   }, [rawMap, depthMap]);
 
-  const [w, h] = useAspect(WIDTH, HEIGHT);
-
   useGSAP(() => {
     gsap.to(uniforms.uProgress, {
-      value: 1,
+      value: 1.1,
       repeat: -1,
-      duration: 3,
-      ease: "power1.out",
+      duration: 4,
+      ease: "power2.out",
     });
   }, [uniforms.uProgress]);
 
@@ -94,7 +101,7 @@ const Scene = () => {
 
   return (
     <Fragment>
-      <mesh scale={[4, 5, 1]} material={material}>
+      <mesh scale={[5, 6, 1]} material={material}>
         <planeGeometry />
       </mesh>
     </Fragment>
@@ -104,6 +111,7 @@ const Scene = () => {
 const Home = () => {
   return (
     <WebGPUCanvas>
+      <PostProcessing />
       <Scene />
     </WebGPUCanvas>
   );
